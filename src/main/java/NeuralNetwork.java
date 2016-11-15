@@ -1,8 +1,6 @@
 import lombok.Data;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 @Data
 public class NeuralNetwork {
@@ -12,7 +10,7 @@ public class NeuralNetwork {
     double learningRate;
     List<Node> inputLayer;
     List<Node> hiddenLayer;
-    List<Node> outputLayer;
+    Node outputLayer;
 
 
     NeuralNetwork(int input, int hidden, int output, double learningRate) {
@@ -22,22 +20,24 @@ public class NeuralNetwork {
         this.learningRate = learningRate;
         this.inputLayer = new ArrayList<>();
         this.hiddenLayer = new ArrayList<>();
-        this.outputLayer = new ArrayList<>();
-        for (int i = 0; i < inputLayerSize; i++) {
-            inputLayer.add(new Node());
+        for (int i = 0; i < this.inputLayerSize; i++) {
+            this.inputLayer.add(new Node());
         }
-        for (int i = 0; i < hiddenLayerSize; i++) {
-            hiddenLayer.add(new Node());
+        for (int i = 0; i < this.hiddenLayerSize; i++) {
+            this.hiddenLayer.add(new Node());
         }
-        for (int i = 0; i < outputLayerSize; i++) {
-            outputLayer.add(new Node());
-        }
+        outputLayer = new Node();
+
         generateRandomWeight();
     }
 
-    public static double sigmoid(double input) {
-        return 1.0 / (1.0 + Math.exp(-input));
+    public void setInputOutput(List<Double> input, double output) {
+        for (int i = 0; i < this.inputLayerSize; i++) {
+            this.inputLayer.get(i).setValue(input.get(i));
+        }
+        this.outputLayer.setValue(output);
     }
+
 
     public void generateRandomWeight() {
         Random random = new Random();
@@ -58,38 +58,80 @@ public class NeuralNetwork {
         }
     }
 
-    public static void backPropLearning(List<Integer> input, int output) {
 
+    public static double sigmoid(double input) {
+//        double result = Math.exp(input) / (denominator);
+//        return result;
+        return 1.0 / (1.0 + (Math.exp(-input)));
     }
 
-    public void forward(List<Integer> input) {
-        for (int i = 0; i < inputLayerSize; i++) {
-            inputLayer.get(i).setValue(input.get(i));
-        }
+    public static double sigmoidDerivative(double input) {
+        double y = sigmoid(input);
+        return y * (1 - y);
+    }
 
+    //https://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/
+    public void forward() {
+        //first layer
+//        double denominator = findDenominator(inputLayer);
         for (int i = 0; i < hiddenLayerSize; i++) {
-            List<Double> feed = new ArrayList<>();
-            for(Node node: this.inputLayer){
-                feed.add(node.getValue()*node.getWeight().get(i));
+            double sum = 0;
+            for (Node node : this.inputLayer) {
+                sum += (node.getValue() * node.getWeight().get(i));
             }
-            hiddenLayer.get(i).setValue(sigmoid(summation(feed)));
+            this.hiddenLayer.get(i).setValue(sigmoid(sum));
         }
 
-        for(int i=0;i<outputLayerSize;i++){
-            List<Double> feed = new ArrayList<>();
-            for(Node node: this.hiddenLayer){
-                feed.add(node.getValue()*node.getWeight().get(i));
+        //second layer
+//        denominator = findDenominator(hiddenLayer);
+        double errorTotal = 0;
+        double actual = 0;
+        for (int i = 0; i < outputLayerSize; i++) {
+            double sum = 0;
+            for (Node node : this.hiddenLayer) {
+                sum += (node.getValue() * node.getWeight().get(i));
             }
-            outputLayer.get(i).setValue(sigmoid(summation(feed)));
+            actual = sigmoid(sum);
+//            errorTotal +=(1/2)*Math.pow((outputLayer.get(i).getValue()-actual),2);
+//            double errorOutput = -(outputLayer.get(i).getValue()-actual);
+//            double errorInput = actual*(1-actual);
+//            double errorWeight = ()
         }
+
+        //back propagation
+        //first layer
+        List<Double> updatedWeightList = new ArrayList<>();
+        for (int i = 0; i < this.hiddenLayerSize; i++) {
+            double delta = -(outputLayer.getValue() - actual) * actual * (1 - actual) * this.hiddenLayer.get(i).getValue();
+            double currentWeight = this.hiddenLayer.get(i).getWeight().get(0);
+            double updatedWeight = currentWeight - (delta * this.learningRate);
+            updatedWeightList.add(updatedWeight);
+        }
+
+
+
+
     }
+
 
     public static double summation(List<Double> input) {
         double sum = 0;
         for (Double num : input) {
-            sum +=num;
+            sum += num;
         }
         return sum;
+    }
+
+    public static double findDenominator(List<Node> nodeList) {
+        double denominator = 0;
+        for (int i = 0; i < nodeList.get(0).getWeight().size(); i++) {
+            double aggregatedSum = 0;
+            for (Node node : nodeList) {
+                aggregatedSum += node.getValue() * node.getWeight().get(i);
+            }
+            denominator += Math.exp(aggregatedSum);
+        }
+        return denominator;
     }
 
 }

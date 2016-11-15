@@ -7,17 +7,17 @@ import java.util.List;
 
 public class Utility {
 
-    static List<List<Integer>> readCsv(String csvFile) {
+    static List<List<Double>> readCsv(String csvFile) {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        List<List<Integer>> data = new ArrayList<>();
+        List<List<Double>> data = new ArrayList<>();
 
         try (CSVReader reader = new CSVReader(new InputStreamReader(classLoader.getResourceAsStream(csvFile)))) {
             String[] nextLine;
             while ((nextLine = reader.readNext()) != null) {
-                List<Integer> row = new ArrayList<>();
+                List<Double> row = new ArrayList<>();
                 for (String value : nextLine) {
 //                    System.out.print(value);
-                    row.add(Integer.parseInt(value));
+                    row.add(Double.parseDouble(value));
                 }
                 data.add(row);
 //                System.out.println();

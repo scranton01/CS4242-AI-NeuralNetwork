@@ -28,8 +28,6 @@ public class Test {
 //        nodes.add(node);
 //        nodes.add(node2);
 //        System.out.println(NeuralNetwork.findDenominator(nodes));
-        Node node = new Node();
-        node.getWeight().add(.135);
-        node.getWeight().add(.235);
+        System.out.println(-((0/10)-.999)*(.999*(1-.999)*1));
     }
 }

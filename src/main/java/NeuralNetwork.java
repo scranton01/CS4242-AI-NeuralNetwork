@@ -4,9 +4,6 @@ import java.util.*;
 
 @Data
 public class NeuralNetwork {
-    int inputLayerSize;
-    int hiddenLayerSize;
-    int outputLayerSize;
     double learningRate;
     List<Node> inputLayer;
     List<Node> hiddenLayer;
@@ -14,18 +11,14 @@ public class NeuralNetwork {
     Node biasHidden;
     Node biasOutput;
 
-
-    NeuralNetwork(int input, int hidden, int output, double learningRate) {
-        this.inputLayerSize = input;
-        this.hiddenLayerSize = hidden;
-        this.outputLayerSize = output;
+    NeuralNetwork(int inputSize, int hiddenSize, double learningRate) {
         this.learningRate = learningRate;
         this.inputLayer = new ArrayList<>();
         this.hiddenLayer = new ArrayList<>();
-        for (int i = 0; i < this.inputLayerSize; i++) {
+        for (int i = 0; i < inputSize; i++) {
             this.inputLayer.add(new Node());
         }
-        for (int i = 0; i < this.hiddenLayerSize; i++) {
+        for (int i = 0; i < hiddenSize; i++) {
             this.hiddenLayer.add(new Node());
         }
         outputLayer = new Node();
@@ -38,44 +31,38 @@ public class NeuralNetwork {
     }
 
     public void setInputOutput(List<Double> input, double output) {
-        for (int i = 0; i < this.inputLayerSize; i++) {
+        for (int i = 0; i < this.inputLayer.size(); i++) {
             this.inputLayer.get(i).setValue(input.get(i));
         }
         this.outputLayer.setValue(output);
     }
 
-
     public void generateRandomWeight() {
         Random random = new Random();
 
         for (Node node : this.inputLayer) {
-            for (int i = 0; i < this.hiddenLayerSize; i++) {
-                node.getWeight().add(random.nextDouble()/100);
+            for (int i = 0; i < this.hiddenLayer.size(); i++) {
+                node.getWeight().add(random.nextDouble() / 100);
             }
         }
         for (Node node : this.hiddenLayer) {
-            for (int i = 0; i < this.outputLayerSize; i++) {
-                node.getWeight().add(random.nextDouble()/100);
-            }
+            node.getWeight().add(random.nextDouble() / 100);
         }
-        for (int i = 0; i < this.hiddenLayerSize; i++) {
-            biasHidden.getWeight().add(random.nextDouble()/100);
+        for (int i = 0; i < this.hiddenLayer.size(); i++) {
+            biasHidden.getWeight().add(random.nextDouble() / 100);
         }
-        for (int i = 0; i < this.outputLayerSize; i++) {
-            biasOutput.getWeight().add(random.nextDouble()/100);
-        }
-    }
+        biasOutput.getWeight().add(random.nextDouble() / 100);
 
+    }
 
     public static double sigmoid(double input) {
         double result = 1.0 / (1.0 + (Math.exp(-input)));
         return result;
     }
 
-    //  https://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/
     public void backPropLearning() {
         //first layer
-        for (int i = 0; i < hiddenLayerSize; i++) {
+        for (int i = 0; i < hiddenLayer.size(); i++) {
             double sum = 0;
             for (Node node : inputLayer) {
                 sum += (node.getValue() * node.getWeight().get(i));
@@ -85,31 +72,27 @@ public class NeuralNetwork {
         }
 
         //second layer
-//        double errorTotal = 0;
         double actual = 0;
-        for (int i = 0; i < outputLayerSize; i++) {
-            double sum = 0;
-            for (Node node : hiddenLayer) {
-                sum += (node.getValue() * node.getWeight().get(i));
-            }
-            sum += (biasOutput.getValue() * biasOutput.getWeight().get(i));
-            actual += sigmoid(sum);
+        double sum = 0;
+        for (Node node : hiddenLayer) {
+            sum += (node.getValue() * node.getWeight().get(0));
         }
-        actual = actual;
+        sum += (biasOutput.getValue() * biasOutput.getWeight().get(0));
+        actual += sigmoid(sum);
+
 
         //back propagation
         //second layer
         List<Double> updatedLayer2WeightList = new ArrayList<>();
 
         double deltaSecondLayer = 0;
-        for (int i = 0; i < hiddenLayerSize; i++) {
+        for (int i = 0; i < hiddenLayer.size(); i++) {
             double error = outputLayer.getValue() / 10.0 - actual;
             double sigmoidDerivative = actual * (1 - actual);
             double hiddenValue = hiddenLayer.get(i).getValue();
             deltaSecondLayer = -(error) * (sigmoidDerivative) * hiddenValue;
             double currentWeight = hiddenLayer.get(i).getWeight().get(0);
             double updatedWeight = currentWeight - (deltaSecondLayer * learningRate);//changed
-//            System.out.println(String.format("Second layer: %f -> %f", currentWeight, updatedWeight));
             updatedLayer2WeightList.add(updatedWeight);
         }
         double biasSecondLayerWeight = biasOutput.getWeight().get(0);
@@ -117,7 +100,7 @@ public class NeuralNetwork {
         biasOutput.getWeight().set(0, biasSecondLayerUpdatedWeight);
 
         //first layer
-        for (int i = 0; i < hiddenLayerSize; i++) {
+        for (int i = 0; i < hiddenLayer.size(); i++) {
             for (Node node : inputLayer) {
                 double errorT = -(outputLayer.getValue() / 10 - actual) * (actual * (1 - actual)) * hiddenLayer.get(i).getWeight().get(0);
                 double sigmoidDerivative = hiddenLayer.get(i).getValue() * (1 - hiddenLayer.get(i).getValue());
@@ -125,7 +108,6 @@ public class NeuralNetwork {
                 double delta = errorT * sigmoidDerivative * input;
                 double currentWeight = node.getWeight().get(i);
                 double updatedWeight = currentWeight - (delta * learningRate); //changed
-//                System.out.println(String.format("First layer: %f -> %f", currentWeight, updatedWeight));
                 node.getWeight().set(i, updatedWeight);
             }
             //update bias node
@@ -135,19 +117,18 @@ public class NeuralNetwork {
             double delta = errorT * sigmoidDerivative * input;
             double currentWeight = biasHidden.getWeight().get(i);
             double updatedWeight = currentWeight - (delta * learningRate); //changed
-//            System.out.println(String.format("First layer: %f -> %f", currentWeight, updatedWeight));
             biasHidden.getWeight().set(i, updatedWeight);
         }
 
         //update second layer weights
-        for (int i = 0; i < hiddenLayerSize; i++) {
+        for (int i = 0; i < hiddenLayer.size(); i++) {
             hiddenLayer.get(i).getWeight().set(0, updatedLayer2WeightList.get(i));
         }
     }
 
     boolean checkSolution() {
         //first layer
-        for (int i = 0; i < hiddenLayerSize; i++) {
+        for (int i = 0; i < hiddenLayer.size(); i++) {
             double sum = 0;
             for (Node node : this.inputLayer) {
                 sum += (node.getValue() * node.getWeight().get(i));
@@ -156,17 +137,13 @@ public class NeuralNetwork {
         }
         //second layer
         double actual = 0;
-        for (int i = 0; i < outputLayerSize; i++) {
-            double sum = 0;
-            for (Node node : this.hiddenLayer) {
-                sum += (node.getValue() * node.getWeight().get(i));
-            }
-            actual = sigmoid(sum);
+        double sum = 0;
+        for (Node node : this.hiddenLayer) {
+            sum += (node.getValue() * node.getWeight().get(0));
         }
+        actual = sigmoid(sum);
         actual = actual * 10;
-//        System.out.println(String.format("actual: %f \nexpected: %f", actual, outputLayer.getValue()));
-        return Math.round(actual) == outputLayer.getValue();
+
+        return Math.floor(actual) == outputLayer.getValue();
     }
-
-
 }
